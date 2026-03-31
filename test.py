@@ -12,23 +12,24 @@ from sklearn.linear_model import LinearRegression
 # ======================
 # LOAD DATA
 # ======================
-data = pd.read_csv("isbsg10.csv")  
+data = pd.read_csv("isbsg10.csv")
 
 X = data.iloc[:, :-1]
 y = data.iloc[:, -1]
 
 # ======================
-# SCALE DATA
-# ======================
-scaler = StandardScaler()
-X = scaler.fit_transform(X)
-
-# ======================
-# SPLIT DATA
+# SPLIT DATA (TRƯỚC)
 # ======================
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
+
+# ======================
+# SCALE DATA ( SAU )
+# ======================
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
 # ======================
 # BASE MODELS
@@ -52,13 +53,13 @@ linear = LinearRegression()
 # VOTING MODELS
 # ======================
 
-#  Voting 1: 2 Extra Trees
+# Voting 1: 2 Extra Trees
 voting1 = VotingRegressor([
     ('et1', ExtraTreesRegressor(n_estimators=200, random_state=42)),
     ('et2', ExtraTreesRegressor(n_estimators=200, random_state=0))
 ])
 
-#  Voting 2: 2 Extra Trees + 2 Gradient Boosting
+# Voting 2: 2 Extra Trees + 2 Gradient Boosting
 voting2 = VotingRegressor([
     ('et1', ExtraTreesRegressor(n_estimators=200, random_state=42)),
     ('et2', ExtraTreesRegressor(n_estimators=200, random_state=0)),
@@ -70,10 +71,8 @@ voting2 = VotingRegressor([
 voting3 = VotingRegressor([
     ('et1', ExtraTreesRegressor(n_estimators=200, random_state=42)),
     ('et2', ExtraTreesRegressor(n_estimators=200, random_state=0)),
-
     ('gb1', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=42)),
     ('gb2', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=0)),
-
     ('lr1', LinearRegression()),
     ('lr2', LinearRegression())
 ])
@@ -101,6 +100,8 @@ def evaluate(y_true, y_pred):
 # ======================
 # TRAIN & TEST
 # ======================
+print("===== RESULTS =====")
+
 for name, model in models.items():
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
@@ -108,6 +109,6 @@ for name, model in models.items():
     mae, rmse, r2 = evaluate(y_test, y_pred)
 
     print(f"\n{name}")
-    print(f"MAE: {mae:.4f}")
+    print(f"MAE : {mae:.4f}")
     print(f"RMSE: {rmse:.4f}")
-    print(f"R2: {r2:.4f}")
+    print(f"R2  : {r2:.4f}")
