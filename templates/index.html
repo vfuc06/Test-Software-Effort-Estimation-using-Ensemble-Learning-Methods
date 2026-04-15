@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Software Cost Estimator - Full Analytics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #2563eb;
+        --success: #10b981;
+        --bg: #f1f5f9;
+        --surface: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --border: #e2e8f0;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+      }
+      body {
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        color: var(--text);
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .header h1 {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -1px;
+      }
+      .header p {
+        color: var(--muted);
+        margin-top: 5px;
+      }
+
+      .container {
+        max-width: 1400px;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 25px;
+      }
+
+      /* PANEL TRÁI */
+      .sidebar {
+        background: var(--surface);
+        padding: 25px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        height: fit-content;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        background: #f1f5f9;
+        padding: 5px;
+        border-radius: 10px;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+        color: var(--muted);
+      }
+      .tab-btn.active {
+        background: var(--surface);
+        color: var(--primary);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--primary);
+        margin-top: 15px;
+      }
+      .dynamic-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--muted);
+      }
+      .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .cost-config {
+        background: #eff6ff;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #dbeafe;
+        margin-bottom: 20px;
+      }
+      .btn-predict {
+        width: 100%;
+        padding: 15px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      .btn-predict:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+      }
+
+      /* PANEL PHẢI: 3 TRÊN - 2 DƯỚI */
+      .results-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 20px;
+      }
+      .card {
+        grid-column: span 2;
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        transition: 0.3s;
+      }
+      /* Căn giữa hàng 2 (thẻ 4 và 5) */
+      .card:nth-child(4) {
+        grid-column: 2 / span 2;
+      }
+      .card:nth-child(5) {
+        grid-column: 4 / span 2;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
+      }
+      .card-name {
+        font-weight: 800;
+        font-size: 15px;
+        margin-bottom: 15px;
+        text-align: center;
+        display: block;
+      }
+
+      .res-box {
+        background: #f8fafc;
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .res-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+      .res-value {
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .price-box {
+        background: #ecfdf5;
+        padding: 12px;
+        border-radius: 10px;
+        text-align: center;
+        border: 1px solid #a7f3d0;
+        margin-bottom: 15px;
+      }
+      .price-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--success);
+        text-transform: uppercase;
+      }
+      .price-value {
+        font-size: 20px;
+        font-weight: 800;
+        color: #065f46;
+      }
+
+      .metrics-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        border-top: 1px solid var(--border);
+        padding-top: 12px;
+      }
+      .metric-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+      }
+      .m-title {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .m-val {
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .sample-item {
+        width: 100%;
+        padding: 8px;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        margin-bottom: 5px;
+        font-size: 11px;
+        cursor: pointer;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>AI Software Cost Estimator</h1>
+      <p>
+        Phân tích đa mô hình: <strong>MAE - RMSE - R²</strong> và Dự toán báo
+        giá dự án
+      </p>
+    </div>
+
+    <div class="container">
+      <div class="sidebar">
+        <div class="tabs" id="tabs"></div>
+        <div class="section-title">📊 THAM SỐ ĐẦU VÀO</div>
+        <div class="dynamic-form" id="input-form"></div>
+
+        <div class="section-title">💰 CẤU HÌNH KINH TẾ</div>
+        <div class="cost-config">
+          <div class="form-group">
+            <label>ĐƠN GIÁ (VNĐ/GIỜ)</label>
+            <input type="number" id="hourly-rate" value="150000" />
+          </div>
+        </div>
+
+        <button class="btn-predict" onclick="doPredict()">
+          PHÂN TÍCH TOÀN DIỆN
+        </button>
+
+        <div class="samples-area" id="samples-area">
+          <div class="section-title">🧪 MẪU THỰC TẾ (TẬP TEST)</div>
+        </div>
+      </div>
+
+      <div class="results-grid" id="results-grid"></div>
+    </div>
+
+    <script>
+      const models = [
+        { id: "linear", name: "Linear Regression", color: "#ef4444" },
+        { id: "extra", name: "Extra Trees", color: "#f59e0b" },
+        { id: "voting1", name: "Voting 1 (2 ETs)", color: "#3b82f6" },
+        { id: "voting2", name: "Voting 2 (2 ET + 2 GB)", color: "#8b5cf6" },
+        { id: "voting3", name: "Voting 3 (Full Ensemble)", color: "#10b981" },
+      ];
+
+      let metaData = {};
+      let currentDS = "";
+
+      const grid = document.getElementById("results-grid");
+      models.forEach((m) => {
+        grid.innerHTML += `
+            <div class="card" id="card-${m.id}" style="border-top: 5px solid ${m.color}">
+                <span class="card-name">${m.name}</span>
+                <div class="res-box">
+                    <div class="res-label">Dự toán Effort</div>
+                    <div class="res-value" id="val-${m.id}">-</div>
+                </div>
+                <div class="price-box">
+                    <div class="price-label">Báo giá ước tính</div>
+                    <div class="price-value" id="price-${m.id}">0 ₫</div>
+                </div>
+                <div class="metrics-list">
+                    <div class="metric-item"><span class="m-title">MAE (Sai số TB):</span><span class="m-val" id="mae-${m.id}">-</span></div>
+                    <div class="metric-item"><span class="m-title">RMSE (Lệch cực đại):</span><span class="m-val" id="rmse-${m.id}">-</span></div>
+                    <div class="metric-item"><span class="m-title">R² (Độ chính xác):</span><span class="m-val" id="r2-${m.id}">-</span></div>
+                </div>
+            </div>
+        `;
+      });
+
+      async function init() {
+        const res = await fetch("/get_meta_data");
+        metaData = await res.json();
+        const tabs = document.getElementById("tabs");
+        Object.keys(metaData).forEach((ds) => {
+          tabs.innerHTML += `<button class="tab-btn" id="btn-${ds}" onclick="setDataset('${ds}')">${ds.toUpperCase()}</button>`;
+        });
+        setDataset("isbsg10");
+      }
+
+      function setDataset(name) {
+        currentDS = name;
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById(`btn-${name}`).classList.add("active");
+
+        const form = document.getElementById("input-form");
+        form.innerHTML = "";
+        metaData[name].feature_names.forEach((f) => {
+          form.innerHTML += `<div class="form-group"><label>${f.toUpperCase()}</label><input type="number" id="in-${f}"></div>`;
+        });
+
+        const samples = document.getElementById("samples-area");
+        samples.innerHTML =
+          '<div class="section-title">🧪 MẪU THỰC TẾ (TẬP TEST)</div>';
+        metaData[name].samples.forEach((s, i) => {
+          const btn = document.createElement("button");
+          btn.className = "sample-item";
+          btn.innerHTML = `Dự án #${i + 1} (Thực tế: ${s.actual.toLocaleString()})`;
+          btn.onclick = () => {
+            for (let k in s.features)
+              document.getElementById(`in-${k}`).value = s.features[k];
+            doPredict();
+          };
+          samples.appendChild(btn);
+        });
+
+        models.forEach((m) => {
+          const mKey =
+            m.id === "linear" ? "linear" : m.id === "extra" ? "extra" : m.id;
+          const met = metaData[name].metrics[mKey];
+          if (met) {
+            document.getElementById(`mae-${m.id}`).innerText =
+              met.mae.toLocaleString();
+            document.getElementById(`rmse-${m.id}`).innerText =
+              met.rmse.toLocaleString();
+            document.getElementById(`r2-${m.id}`).innerText =
+              (met.r2 * 100).toFixed(2) + "%";
+          }
+        });
+      }
+
+      async function doPredict() {
+        const rate = parseFloat(document.getElementById("hourly-rate").value);
+        let features = {};
+        metaData[currentDS].feature_names.forEach((f) => {
+          features[f] = parseFloat(
+            document.getElementById(`in-${f}`).value || 0,
+          );
+        });
+
+        const res = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataset: currentDS, features }),
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          const p = data.predictions;
+          const mapping = {
+            linear: p.linear,
+            extra: p.extra,
+            voting1: p.voting1,
+            voting2: p.voting2,
+            voting3: p.voting3,
+          };
+          for (let id in mapping) {
+            const val = mapping[id];
+            const el = document.getElementById(`val-${id}`);
+            if (el) {
+              el.innerText = val.toLocaleString() + " hrs";
+              const cost = val * rate;
+              document.getElementById(`price-${id}`).innerText =
+                val < 0 ? "⚠️ DỮ LIỆU SAI" : cost.toLocaleString() + " ₫";
+              if (val < 0)
+                document.getElementById(`price-${id}`).style.color = "#ef4444";
+              else
+                document.getElementById(`price-${id}`).style.color = "#065f46";
+            }
+          }
+        }
+      }
+      init();
+    </script>
+  </body>
+</html>
