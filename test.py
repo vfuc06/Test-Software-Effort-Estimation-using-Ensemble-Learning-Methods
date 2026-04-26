@@ -1,114 +1,79 @@
 import pandas as pd
 import numpy as np
-
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
-from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import ExtraTreesRegressor, GradientBoostingRegressor, VotingRegressor
 from sklearn.linear_model import LinearRegression
 
-# ======================
-# LOAD DATA
-# ======================
-data = pd.read_csv("isbsg10.csv")
+def evaluate_datasets():
+    dataset_configs = [
+        ('ISBSG10', 'isbsg10.csv', 'effort', []),
+        ('FINNISH', 'finnish.csv', 'effort', []),
+        ('DESHARNAIS', 'Desharnais.csv', 'Effort', ['id', 'Project'])
+    ]
 
-X = data.iloc[:, :-1]
-y = data.iloc[:, -1]
+    for name, filename, target_col, drop_cols in dataset_configs:
+        print(f"\n{'='*50}")
+        print(f"ĐANG ĐÁNH GIÁ TẬP DỮ LIỆU: {name}") 
+        print(f"{'='*50}")
+        
+        if not os.path.exists(filename):
+            print(f"Lỗi: Không tìm thấy file '{filename}' trong thư mục hiện tại.")
+            continue
 
-# ======================
-# SPLIT DATA (TRƯỚC)
-# ======================
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+        # Load và tiền xử lý data
+        data = pd.read_csv(filename)
+        if drop_cols:
+            data = data.drop(columns=drop_cols, errors='ignore')
 
-# ======================
-# SCALE DATA ( SAU )
-# ======================
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+        X = data.drop(columns=[target_col])
+        y = data[target_col]
 
-# ======================
-# BASE MODELS
-# ======================
-knn = KNeighborsRegressor(n_neighbors=3)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
 
-extra = ExtraTreesRegressor(
-    n_estimators=200,
-    random_state=42
-)
+        # Định nghĩa Models
+        models = {
+            'Linear Regression': LinearRegression(),
+            'Extra Trees': ExtraTreesRegressor(n_estimators=200, random_state=42),
+            'Voting (2 ETs)': VotingRegressor([
+                ('et1', ExtraTreesRegressor(n_estimators=200, random_state=42)), 
+                ('et2', ExtraTreesRegressor(n_estimators=200, random_state=0))
+            ]),
+            'Voting (ET+GB)': VotingRegressor([
+                ('et1', ExtraTreesRegressor(n_estimators=200, random_state=42)), 
+                ('et2', ExtraTreesRegressor(n_estimators=200, random_state=0)), 
+                ('gb1', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=42)), 
+                ('gb2', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=0))
+            ]),
+            'Voting (Full)': VotingRegressor([
+                ('et1', ExtraTreesRegressor(n_estimators=200, random_state=42)), 
+                ('et2', ExtraTreesRegressor(n_estimators=200, random_state=0)), 
+                ('gb1', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=42)), 
+                ('gb2', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=0)), 
+                ('lr1', LinearRegression()), 
+                ('lr2', LinearRegression())
+            ])
+        }
 
-gboost = GradientBoostingRegressor(
-    n_estimators=200,
-    learning_rate=0.05,
-    random_state=42
-)
+        # Train và In Kết quả dạng Bảng
+        print(f"{'Mô hình':<25} | {'RMSE':<10} | {'MAE':<10} | {'R2':<10}")
+        print("-" * 62)
+        
+        for m_name, model in models.items():
+            model.fit(X_train_scaled, y_train)
+            yp = model.predict(X_test_scaled)
+            
+            mae = round(mean_absolute_error(y_test, yp), 2)
+            rmse = round(np.sqrt(mean_squared_error(y_test, yp)), 2)
+            r2 = round(r2_score(y_test, yp), 4)
+            
+            print(f"{m_name:<25} | {rmse:<10} | {mae:<10} | {r2:<10}")
 
-linear = LinearRegression()
-
-# ======================
-# VOTING MODELS
-# ======================
-
-# Voting 1: 2 Extra Trees
-voting1 = VotingRegressor([
-    ('et1', ExtraTreesRegressor(n_estimators=200, random_state=42)),
-    ('et2', ExtraTreesRegressor(n_estimators=200, random_state=0))
-])
-
-# Voting 2: 2 Extra Trees + 2 Gradient Boosting
-voting2 = VotingRegressor([
-    ('et1', ExtraTreesRegressor(n_estimators=200, random_state=42)),
-    ('et2', ExtraTreesRegressor(n_estimators=200, random_state=0)),
-    ('gb1', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=42)),
-    ('gb2', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=0))
-])
-
-# Voting 3: 2 Extra Trees + 2 Gradient Boosting + 2 Linear Regression
-voting3 = VotingRegressor([
-    ('et1', ExtraTreesRegressor(n_estimators=200, random_state=42)),
-    ('et2', ExtraTreesRegressor(n_estimators=200, random_state=0)),
-    ('gb1', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=42)),
-    ('gb2', GradientBoostingRegressor(n_estimators=200, learning_rate=0.05, random_state=0)),
-    ('lr1', LinearRegression()),
-    ('lr2', LinearRegression())
-])
-
-# ======================
-# MODEL LIST
-# ======================
-models = {
-    "KNN": knn,
-    "Extra Trees": extra,
-    "Voting 1": voting1,
-    "Voting 2": voting2,
-    "Voting 3": voting3
-}
-
-# ======================
-# EVALUATE FUNCTION
-# ======================
-def evaluate(y_true, y_pred):
-    mae = mean_absolute_error(y_true, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-    r2 = r2_score(y_true, y_pred)
-    return mae, rmse, r2
-
-# ======================
-# TRAIN & TEST
-# ======================
-print("===== RESULTS =====")
-
-for name, model in models.items():
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-
-    mae, rmse, r2 = evaluate(y_test, y_pred)
-
-    print(f"\n{name}")
-    print(f"MAE : {mae:.4f}")
-    print(f"RMSE: {rmse:.4f}")
-    print(f"R2  : {r2:.4f}")
+if __name__ == '__main__':
+    evaluate_datasets()
